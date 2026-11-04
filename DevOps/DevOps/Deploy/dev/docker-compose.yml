@@ -1,0 +1,74 @@
+services:
+  proxy:
+    build:
+      context: ./proxy
+      dockerfile: Dockerfile
+    container_name: laravel_proxy
+    ports:
+      - "8000:80"
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ../../Project:/var/www/html
+      - pma_data:/var/www/pma:ro
+    depends_on:
+      - app
+      - phpmyadmin
+    networks:
+      - app-net
+
+  app:
+    build:
+      context: ../../Project
+      dockerfile: ../Deploy/dev/php/Dockerfile
+    container_name: laravel_app
+    volumes:
+      - ../../Project:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-net
+
+  db:
+    build:
+      context: ./db
+      dockerfile: Dockerfile
+      args:
+        DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+        DB_DATABASE: ${DB_DATABASE}
+        DB_USERNAME: ${DB_USERNAME}
+        DB_PASSWORD: ${DB_PASSWORD}
+    container_name: laravel_db
+    ports:
+      - "127.0.0.1:3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "127.0.0.1", "--silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    networks:
+      - app-net
+
+  phpmyadmin:
+    image: phpmyadmin:5.2-fpm-alpine
+    container_name: laravel_pma
+    environment:
+      PMA_HOST: db
+    volumes:
+      - pma_data:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-net
+
+volumes:
+  db_data:
+  pma_data:
+
+networks:
+  app-net:
+    driver: bridge
