@@ -53,7 +53,8 @@ services:
       - app-net
 
   phpmyadmin:
-    image: phpmyadmin:5.2-fpm-alpine
+    build:
+      ./phpmyadmin
     container_name: laravel_pma
     environment:
       PMA_HOST: db
