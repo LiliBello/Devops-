@@ -1,0 +1,17 @@
+stages:
+  - build
+
+build:
+  stage: build
+  tags:
+    - docker
+    - linux
+  script:
+    - echo "Сборка проекта..."
+    - mkdir -p dist
+    - echo "binary" > dist/app
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 30 days
+    
